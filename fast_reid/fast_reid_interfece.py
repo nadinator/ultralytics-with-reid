@@ -74,7 +74,6 @@ class FastReIDInterface:
         self.pH, self.pW = self.cfg.INPUT.SIZE_TEST
 
     def inference(self, image, detections):
-
         if detections is None or np.size(detections) == 0:
             return []
 
@@ -88,39 +87,46 @@ class FastReIDInterface:
             tlbr[1] = max(0, tlbr[1])
             tlbr[2] = min(W - 1, tlbr[2])
             tlbr[3] = min(H - 1, tlbr[3])
-            patch = image[tlbr[1]:tlbr[3], tlbr[0]:tlbr[2], :]
+            patch = image[tlbr[1] : tlbr[3], tlbr[0] : tlbr[2], :]
 
             # the model expects RGB inputs
             patch = patch[:, :, ::-1]
 
             # Apply pre-processing to image.
-            patch = cv2.resize(patch, tuple(self.cfg.INPUT.SIZE_TEST[::-1]), interpolation=cv2.INTER_LINEAR)
-            # patch, scale = preprocess(patch, self.cfg.INPUT.SIZE_TEST[::-1])
-
-            # plt.figure()
-            # plt.imshow(patch)
-            # plt.show()
+            if patch.size > 0:
+                patch = cv2.resize(
+                    patch,
+                    tuple(self.cfg.INPUT.SIZE_TEST[::-1]),
+                    interpolation=cv2.INTER_LINEAR,
+                )
+                patch, scale = preprocess(
+                    patch, self.cfg.INPUT.SIZE_TEST[::-1]
+                )
 
             # Make shape with a new batch dimension which is adapted for network input
-            patch = torch.as_tensor(patch.astype("float32").transpose(2, 0, 1))
-            patch = patch.to(device=self.device).half()
+            if patch.size > 0:  # Ensure patch is not empty after preprocessing
+                patch = torch.as_tensor(
+                    patch.astype("float32").transpose(2, 0, 1)
+                )
+                patch = patch.to(device=self.device).half()
+                patches.append(patch)
 
-            patches.append(patch)
-
-            if (d + 1) % self.batch_size == 0:
+            if (d + 1) % self.batch_size == 0 and len(
+                patches
+            ) > 0:  # Check if patches is not empty
                 patches = torch.stack(patches, dim=0)
                 batch_patches.append(patches)
                 patches = []
 
-        if len(patches):
+        if len(patches) > 0:  # Check again for any remaining patches
             patches = torch.stack(patches, dim=0)
             batch_patches.append(patches)
 
+        if len(batch_patches) == 0:  # Check if batch_patches is empty
+            return np.zeros((0, 2048))  # Or any appropriate default value
+
         features = np.zeros((0, 2048))
-        # features = np.zeros((0, 768))
-
         for patches in batch_patches:
-
             # Run model
             patches_ = torch.clone(patches)
             pred = self.model(patches)
@@ -132,7 +138,6 @@ class FastReIDInterface:
             if np.isnan(feat).any():
                 for n in range(np.size(nans)):
                     if nans[n]:
-                        # patch_np = patches[n, ...].squeeze().transpose(1, 2, 0).cpu().numpy()
                         patch_np = patches_[n, ...]
                         patch_np_ = torch.unsqueeze(patch_np, 0)
                         pred_ = self.model(patch_np_)
@@ -148,4 +153,3 @@ class FastReIDInterface:
             features = np.vstack((features, feat))
 
         return features
-
