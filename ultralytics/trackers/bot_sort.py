@@ -10,6 +10,8 @@ from .utils import matching
 from .utils.gmc import GMC
 from .utils.kalman_filter import KalmanFilterXYWH
 
+from fast_reid.fast_reid_interfece import FastReIDInterface
+
 
 class BOTrack(STrack):
     """
@@ -157,7 +159,9 @@ class BOTSORT(BYTETracker):
 
         if args.with_reid:
             # Haven't supported BoT-SORT(reid) yet
-            self.encoder = None
+            self.encoder = FastReIDInterface(
+                args.reid_config, args.reid_weights, args.device
+            )
         self.gmc = GMC(method=args.gmc_method)
 
     def get_kalmanfilter(self):
