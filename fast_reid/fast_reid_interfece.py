@@ -50,9 +50,10 @@ def preprocess(image, input_size):
 
 
 class FastReIDInterface:
-    def __init__(self, config_file, weights_path, device, batch_size=8):
+
+    def __init__(self, config_file, weights_path, device="cpu", batch_size=8):
         super(FastReIDInterface, self).__init__()
-        if device != 'cpu':
+        if device != "cpu" and torch.cuda.is_available():
             self.device = 'cuda'
         else:
             self.device = 'cpu'
@@ -66,10 +67,7 @@ class FastReIDInterface:
 
         Checkpointer(self.model).load(weights_path)
 
-        if self.device != 'cpu':
-            self.model = self.model.eval().to(device='cuda').half()
-        else:
-            self.model = self.model.eval()
+        self.model = self.model.eval().to(device=self.device).half()
 
         self.pH, self.pW = self.cfg.INPUT.SIZE_TEST
 
