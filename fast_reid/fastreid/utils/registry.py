@@ -30,11 +30,11 @@ class Registry(object):
         self._obj_map: Dict[str, object] = {}
 
     def _do_register(self, name: str, obj: object) -> None:
-        assert (
-                name not in self._obj_map
-        ), "An object named '{}' was already registered in '{}' registry!".format(
-            name, self._name
-        )
+        if name in self._obj_map:
+            print(
+                f"Warning: An object named '{name}' is already registered in '{self._name}' registry!"
+            )
+            return
         self._obj_map[name] = obj
 
     def register(self, obj: object = None) -> Optional[object]:
