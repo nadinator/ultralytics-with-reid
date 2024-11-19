@@ -1,10 +1,7 @@
 pandas
 patsy
-py
-python
 pytz
 seaborn
 seaborn
 statsmodels
-# ultralytics
 py-cpuinfo
