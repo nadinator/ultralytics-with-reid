@@ -13,7 +13,9 @@ model = YOLO(
 
 if __name__ == "__main__":
     model.track(
-        source="rtsp://192.168.1.3/live",
+        source=0,
+        # source="rtsp://192.168.1.3/live",
+        classes=[10],
         persist=True,
         show=True,
         tracker="my_botsort.yaml",
