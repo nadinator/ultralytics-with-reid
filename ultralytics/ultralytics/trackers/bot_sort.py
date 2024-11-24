@@ -2,7 +2,9 @@
 
 from collections import deque
 
+import torch
 import numpy as np
+from torchreid.reid.utils import FeatureExtractor
 
 from .basetrack import TrackState
 from .byte_tracker import BYTETracker, STrack
@@ -191,7 +193,8 @@ class BOTSORT(BYTETracker):
 
         if args.with_reid:
             # Haven't supported BoT-SORT(reid) yet
-            self.encoder = None
+            self.encoder = FeatureExtractor("osnet_x1_0")
+            self.encoder.inference = self.encoder
         self.gmc = GMC(method=args.gmc_method)
 
     def get_kalmanfilter(self):
@@ -203,7 +206,8 @@ class BOTSORT(BYTETracker):
         if len(dets) == 0:
             return []
         if self.args.with_reid and self.encoder is not None:
-            features_keep = self.encoder.inference(img, dets)
+            # features_keep = self.encoder.inference(img, dets)
+            features_keep = self.encoder.inference(img).cpu().numpy()
             return [BOTrack(xyxy, s, c, f) for (xyxy, s, c, f) in zip(dets, scores, cls, features_keep)]  # detections
         else:
             return [BOTrack(xyxy, s, c) for (xyxy, s, c) in zip(dets, scores, cls)]  # detections
